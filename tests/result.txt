@@ -1,0 +1,1 @@
+{"authtoken":{"authtoken":"vP4D3h2uMO4fN-TnpIgarA","message":"auth"},"networks":{"23601":{"name":"Home","onboarded":true},"35008":{"name":"Dacha","onboarded":true}},"region":{"u001":"United States"}}
