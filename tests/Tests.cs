@@ -1,8 +1,10 @@
 using BlinkDotnet;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Moq;
+
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,17 +18,34 @@ namespace Tests
     {readonly Mock<ILogger<BlinkCam>> loggerMock;
        
         private IConfigurationRoot configuration;
-        private BlinkCam blinkCam;
+        private IBlinkCam blinkCam;
 
         public Tests()
         {
+             var services = new ServiceCollection();
+
             var builder = new ConfigurationBuilder()
                 .AddUserSecrets<Tests>();
-
+            
             this.configuration = builder.Build();
+            
             this.loggerMock = new Mock<ILogger<BlinkCam>>();
 
-            this.blinkCam = new BlinkCam(this.configuration, this.loggerMock.Object);
+            services.AddSingleton<ILogger<BlinkCam>>(this.loggerMock.Object);
+
+            services
+                .AddOptions<BlinkCamOptions>()
+                .Configure(options => getOpts(options));
+
+            services.TryAddScoped<IBlinkCam, BlinkCam>();
+
+            var serviceProvider = services.BuildServiceProvider(); 
+            this.blinkCam = serviceProvider.GetRequiredService<IBlinkCam>();
+        }
+
+        private void getOpts(BlinkCamOptions opt)
+        {
+                this.configuration.Bind("BlinkCam", opt);
         }
 
         [Fact]

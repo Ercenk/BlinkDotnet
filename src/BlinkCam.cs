@@ -1,6 +1,7 @@
 ﻿using BlinkDotnet.DTO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -28,8 +29,8 @@ namespace BlinkDotnet
         private const string hostTemplate = "rest.{0}.immedia-semi.com";
         private string urlBaseTemplate = "https://{0}";
 
-        public BlinkCam(IConfiguration configuration, ILogger<BlinkCam> logger) : 
-            this(configuration["AppSettings:BlinkUserName"], configuration["AppSettings:BlinkPassword"], logger)
+        public BlinkCam(IOptionsMonitor<BlinkCamOptions> optionsMonitor, ILogger<BlinkCam> logger) : 
+            this(optionsMonitor.CurrentValue.UserName, optionsMonitor.CurrentValue.Password, logger)
         {
         }
         
