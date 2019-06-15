@@ -1,5 +1,8 @@
 using BlinkDotnet;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Moq;
+using Moq;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,7 +13,8 @@ namespace Tests
 {
 
     public class Tests
-    {
+    {readonly Mock<ILogger<BlinkCam>> loggerMock;
+       
         private IConfigurationRoot configuration;
         private BlinkCam blinkCam;
 
@@ -20,10 +24,9 @@ namespace Tests
                 .AddUserSecrets<Tests>();
 
             this.configuration = builder.Build();
-            var userName = this.configuration["AppSettings:BlinkUserName"];
-            var password = this.configuration["AppSettings:BlinkPassword"];
+            this.loggerMock = new Mock<ILogger<BlinkCam>>();
 
-            this.blinkCam = new BlinkCam(userName, password);
+            this.blinkCam = new BlinkCam(this.configuration, this.loggerMock.Object);
         }
 
         [Fact]

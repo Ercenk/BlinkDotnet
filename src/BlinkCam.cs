@@ -1,5 +1,6 @@
 ﻿using BlinkDotnet.DTO;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -23,19 +24,20 @@ namespace BlinkDotnet
     {
         private readonly string userName;
         private readonly string password;
+        private readonly ILogger<BlinkCam> logger;
         private const string hostTemplate = "rest.{0}.immedia-semi.com";
         private string urlBaseTemplate = "https://{0}";
 
-        public BlinkCam(string userName, string password)
+        public BlinkCam(IConfiguration configuration, ILogger<BlinkCam> logger) : 
+            this(configuration["AppSettings:BlinkUserName"], configuration["AppSettings:BlinkPassword"], logger)
+        {
+        }
+        
+        public BlinkCam(string userName, string password, ILogger<BlinkCam> logger)
         {
             this.userName = userName;
             this.password = password;
-        }
-
-        public BlinkCam(IConfiguration configuration)
-        {
-            this.userName = configuration["AppSettings:BlinkUserName"];
-            this.password = configuration["AppSettings:BlinkPassword"];
+            this.logger = logger;
         }
 
         public async Task<LoginResponse> LoginAsync(CancellationToken cancelToken = default(CancellationToken))
@@ -55,11 +57,13 @@ namespace BlinkDotnet
                 {
                     response.EnsureSuccessStatusCode();
                     var contents = await response.Content.ReadAsStringAsync();
+                    this.logger.LogInformation("Logged on");
                     return new LoginResponse(contents);
                 }
             }
             catch (Exception ex)
             {
+                this.logger.LogError(new EventId(1, "Login"), ex, "logon error");
                 throw ex;
             }
         }
@@ -93,8 +97,9 @@ namespace BlinkDotnet
                     events.AddRange(CameraEvent.GetEvents(responseContents));
                 }
             }
-
-            return events.ToList();
+            var eventsList = events.ToList();
+            this.logger.LogInformation($"Found {eventsList.Count} events.");
+            return eventsList;
         }
 
         public async Task<IEnumerable<RecordedVideo>> GetAllVideosListAsync(CancellationToken cancelToken = default(CancellationToken))
@@ -113,6 +118,7 @@ namespace BlinkDotnet
                     response.EnsureSuccessStatusCode();
                     var responseContents = await response.Content.ReadAsStringAsync();
                     var videosList = RecordedVideo.GetVideoList(responseContents).ToList();
+                    this.logger.LogInformation($"Found {videosList.Count} videos.");
                     if (!videosList.Any())
                     {
                         break;
@@ -121,7 +127,7 @@ namespace BlinkDotnet
                     videos.AddRange(videosList);
                 }
             }
-
+            this.logger.LogInformation($"Found a total of {videos.Count} videos.");
             return videos;
         }
 
